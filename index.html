@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>Flashcard Kanji</title>
+   <style>
+      :root {
+         --bg: #f9fafb;
+         --card: #ffffff;
+         --accent: #8b5cf6;
+         --text: #1f2937;
+         --muted: #6b7280;
+         --good: #34d399;
+         --danger: #f87171;
+         --shadow: 0 10px 25px rgba(0, 0, 0, .1);
+      }
+
+      * {
+         box-sizing: border-box;
+      }
+
+      body {
+         margin: 0;
+         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+         /* background: radial-gradient(1000px 500px at 80% 0%, #0b1025 0%, var(--bg) 60%); */
+         color: var(--text);
+         min-height: 100vh;
+         display: grid;
+         place-items: center;
+         padding: 24px;
+      }
+
+      .app {
+         width: 100%;
+         max-width: 900px;
+         display: grid;
+         gap: 16px;
+      }
+
+      header {
+         display: flex;
+         align-items: baseline;
+         justify-content: space-between;
+         flex-wrap: wrap;
+         gap: 8px 16px;
+      }
+
+      header h1 {
+         font-size: 20px;
+         margin: 0;
+         letter-spacing: 0.2px;
+      }
+
+      header .count {
+         font-size: 14px;
+         color: var(--muted);
+      }
+
+      .deck {
+         display: grid;
+         grid-template-columns: 1fr 320px;
+         gap: 16px;
+      }
+
+      @media (max-width: 860px) {
+         .deck {
+            grid-template-columns: 1fr;
+         }
+      }
+
+      .card {
+         position: relative;
+         perspective: 1000px;
+         height: 360px;
+      }
+
+      .card-inner {
+         position: absolute;
+         inset: 0;
+         border-radius: 16px;
+         /* background: linear-gradient(180deg, #0f131f 0%, var(--card) 100%); */
+         box-shadow: var(--shadow);
+         transform-style: preserve-3d;
+         transition: transform 450ms cubic-bezier(.2, .8, .2, 1);
+         cursor: pointer;
+      }
+
+      .card-inner.flipped {
+         transform: rotateY(180deg);
+      }
+
+      .face {
+         position: absolute;
+         inset: 0;
+         padding: 24px;
+         display: grid;
+         place-items: center;
+         backface-visibility: hidden;
+      }
+
+      .front .kanji {
+         font-size: clamp(56px, 12vw, 120px);
+         font-weight: 700;
+         line-height: 1;
+      }
+
+      .front .level {
+         position: absolute;
+         top: 16px;
+         left: 20px;
+         font-size: 12px;
+         color: var(--muted);
+         letter-spacing: 0.5px;
+      }
+
+      .back {
+         transform: rotateY(180deg);
+         text-align: center;
+         gap: 12px;
+      }
+
+      .back .meaning {
+         font-size: clamp(20px, 3.6vw, 28px);
+         font-weight: 600;
+      }
+
+      .back .reading {
+         font-size: 16px;
+         color: var(--muted);
+      }
+
+      .controls {
+         margin-top: 10px;
+         display: flex;
+         gap: 8px;
+         align-items: center;
+         justify-content: space-between;
+         flex-wrap: wrap;
+      }
+
+      .btn {
+         appearance: none;
+         border: var(--shadow);
+         color: #ffffff;
+         background: var(--accent);
+         padding: 10px 14px;
+         border-radius: 10px;
+         cursor: pointer;
+         font-weight: 600;
+         transition: transform 120ms ease, box-shadow 150ms ease, border-color 150ms ease;
+      }
+
+      .btn:hover {
+         border-color: var(--accent);
+         box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+      }
+
+      .btn:active {
+         transform: translateY(1px) scale(0.99);
+      }
+
+      .btn.primary {
+         background: linear-gradient(180deg, #0e2332 0%, #0b1824 100%);
+         border-color: #124a63;
+      }
+
+      .index {
+         font-size: 14px;
+         color: var(--muted);
+      }
+
+      .panel {
+         box-shadow: var(--shadow);
+         border-radius: 14px;
+         padding: 16px;
+         /* background: linear-gradient(180deg, #0f131f 0%, var(--card) 100%); */
+      }
+
+      .panel h2 {
+         margin: 0 0 10px;
+         font-size: 16px;
+         color: var(--text);
+      }
+
+      .form {
+         display: grid;
+         gap: 8px;
+      }
+
+      .field {
+         display: grid;
+         gap: 6px;
+      }
+
+      .label {
+         font-size: 13px;
+         color: var(--muted);
+      }
+
+      .input {
+         width: 100%;
+         padding: 10px 12px;
+         border-radius: 10px;
+         border: var(--shadow);
+         background: #0b1220;
+         color: var(--text);
+      }
+
+      .row {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 8px;
+      }
+
+      .similar {
+         font-size: 20px;
+
+      }
+
+      @media (max-width: 520px) {
+         .row {
+            grid-template-columns: 1fr;
+         }
+      }
+
+      .form-actions {
+         display: flex;
+         gap: 8px;
+         justify-content: flex-end;
+      }
+
+      .small {
+         font-size: 12px;
+         color: var(--muted);
+      }
+
+      .success {
+         color: var(--good);
+      }
+
+      .danger {
+         color: var(--danger);
+      }
+
+      .hidden {
+         display: none;
+      }
+   </style>
+</head>
+
+<body>
+   <div class="app">
+      <header>
+         <h1>Flashcard Kanji</h1>
+         <div class="count" id="count"></div>
+      </header>
+
+      <div class="deck">
+         <!-- Card area -->
+         <section>
+            <div class="card" id="card">
+               <div class="card-inner" id="cardInner">
+                  <div class="face front">
+                     <div class="kanji" id="kanji"></div>
+                  </div>
+                  <div class="face back">
+                     <div class="meaning" id="meaning"></div>
+                     <div>
+                        <span class="onYomi" id="onYomi"></span>
+                        <br>
+                        <span class="onYomiEx" id="onYomiEx"></span>
+                     </div>
+                     <div>
+                        <span class="kunYomi" id="kunYomi"></span>
+                        <br>
+                        <span class="kunYomiEx" id="kunYomiEx"></span>
+                     </div>
+                     <div class="similar" id="similar"></div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="controls">
+               <div class="left">
+                  <button class="btn" id="prev">&larr; Prev</button>
+                  <button class="btn" id="next">Next &rarr;</button>
+                  <!-- <button class="btn primary" id="shuffle">Shuffle</button> -->
+               </div>
+               <div class="index" id="index">1 / 10</div>
+            </div>
+         </section>
+
+         <!-- Sidebar: add cards -->
+         <aside class="panel">
+            <div>
+               <label>Bắt đầu: <input type="number" id="start" min="1" value="1"></label><br>
+               <label>Kết thúc: <input type="number" id="end" min="1" value="10"></label>
+               <button onclick="Filter()">Filter</button>
+            </div>
+            <!-- <h2>Thêm thẻ</h2>
+        <form class="form" id="addForm">
+          <div class="field">
+            <label class="label">Kanji</label>
+            <input class="input" id="fKanji" placeholder="例: 学" required />
+          </div>
+          <div class="row">
+            <div class="field">
+              <label class="label">Nghĩa (Việt)</label>
+              <input class="input" id="fMeaning" placeholder="Học" required />
+            </div>
+            <div class="field">
+              <label class="label">Âm đọc (romaji/ kana)</label>
+              <input class="input" id="fReading" placeholder="がく・まなぶ (gaku / manabu)" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">JLPT level (tùy chọn)</label>
+            <input class="input" id="fLevel" placeholder="N5 / N4 / ..." />
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="submit">Thêm</button>
+            <button class="btn" type="button" id="reset">Reset bộ thẻ</button>
+          </div>
+          <div class="small">
+            <span id="msg" class="hidden"></span>
+          </div>
+        </form> -->
+         </aside>
+      </div>
+   </div>
+   <script src="kanjilist.js"></script>
+   <script>
+
+
+      // --- Helpers ---
+      const LS_KEY = "kanji_flashcards_v1";
+      const LS_KEYEX = "kanji_flashcards_v1_ex";
+      const el = (id) => document.getElementById(id);
+      const cardInner = el("cardInner");
+      const kanjiEl = el("kanji");
+      const meaningEl = el('meaning');
+      const onYomiEl = el("onYomi");
+      const kunYomiEl = el("kunYomi");
+      const onYomiexEl = el("onYomiEx");
+      const kunYomiexEl = el("kunYomiEx");
+      const similarEl = el("similar");
+      const indexEl = el("index");
+      const countEl = el("count");
+      const msgEl = el("msg");
+
+      let deck = [];
+      let deckEx = [];
+      let i = 0;
+      let iEx = 0;
+      let flipped = false;
+
+      function Filter() {
+         const start = document.getElementById('start').value;
+         const end = document.getElementById('end').value;
+         loadDeck(start, end);
+      }
+
+      // Load deck from LocalStorage or default
+      function loadDeck(start, end) {
+         const raw = localStorage.getItem(LS_KEY);
+         if(start != null && end!= null){
+            console.log(start, end);
+            deck = raw ? JSON.parse(raw) : defaultDeck.slice(start, end);
+         }else{
+            deck = raw ? JSON.parse(raw) : defaultDeck;
+         }
+         i = 0;
+         render();
+         updateCount();
+      }
+
+      function saveDeck() {
+         localStorage.setItem(LS_KEY, JSON.stringify(deck));
+         updateCount();
+      }
+
+      function updateCount() {
+         countEl.textContent = `Tổng thẻ: ${deck.length}`;
+         indexEl.textContent = `${i + 1} / ${deck.length}`;
+      }
+
+      function loadDeckEx(name) {
+
+         if (name == "on") {
+            deckEx = deck[i].examples.onYomi.slice();
+            renderEx("on");
+            // console.log(deckEx)
+         }
+         if (name == "kun") {
+            deckEx = deck[i].examples.kunYomi.slice();
+            renderEx("kun");
+         }
+
+         // iEx = 0;
+
+         // updateCountEx();
+      }
+
+      // function saveDeckEx() {
+      //    localStorage.setItem(LS_KEYEX, JSON.stringify(deckEx));
+      //    updateCountEx();
+      // }
+
+      // function updateCountEx() {
+      //    iEx + 1;
+      // }
+
+      function render() {
+         const c = deck[i];
+         if (!c) return;
+         kanjiEl.textContent = c.kanji || "";
+         meaningEl.textContent = c.meaning || "";
+         onYomiEl.textContent = c.onYomi || "";
+         loadDeckEx("on");
+         kunYomiEl.textContent = c.kunYomi || "";
+         loadDeckEx("kun");
+         similarEl.textContent = c.similar || "";
+      }
+
+      function renderEx(name) {
+         const c = deckEx;
+         let strings = "";
+         if (!c) return;
+         for (let i = 0; i <= c.length - 1; i++) {
+            if (name == 'on') {
+               strings += `<span>${c[i].word || ""}</span> <span>${c[i].meaning || ""}</span><br>`;
+            }
+            if (name == 'kun') {
+               strings += `<span>${c[i].word || ""}</span> <span>${c[i].meaning || ""}</span><br>`;
+            }
+         }
+         if (name == 'on') {
+            onYomiexEl.innerHTML = strings;
+         }
+         if (name == 'kun') {
+            kunYomiexEl.innerHTML = strings;
+         }
+      }
+
+      function setMsg(text, type = "success") {
+         msgEl.textContent = text;
+         msgEl.className = type;
+         msgEl.classList.remove("hidden");
+         setTimeout(() => msgEl.classList.add("hidden"), 2000);
+      }
+
+      // --- Card interactions ---
+      el("card").addEventListener("click", () => {
+         flipped = !flipped;
+         cardInner.classList.toggle("flipped", flipped);
+      });
+
+      function next() {
+         i = (i + 1) % deck.length;
+         flipped = false;
+         cardInner.classList.remove("flipped");
+         render();
+         updateCount();
+      }
+
+      function prev() {
+         i = (i - 1 + deck.length) % deck.length;
+         flipped = false;
+         cardInner.classList.remove("flipped");
+         render();
+         updateCount();
+      }
+
+      el("next").addEventListener("click", next);
+      el("prev").addEventListener("click", prev);
+
+      // Keyboard arrows
+      window.addEventListener("keydown", (e) => {
+         if (e.key === "ArrowRight") next();
+         else if (e.key === "ArrowLeft") prev();
+         else if (e.key.toLowerCase() === "f") {
+            flipped = !flipped;
+            cardInner.classList.toggle("flipped", flipped);
+         }
+      });
+
+      // Shuffle deck (Fisher–Yates)
+      //  el("shuffle").addEventListener("click", () => {
+      //    for (let j = deck.length - 1; j > 0; j--) {
+      //      const k = Math.floor(Math.random() * (j + 1));
+      //      [deck[j], deck[k]] = [deck[k], deck[j]];
+      //    }
+      //    i = 0;
+      //    flipped = false;
+      //    cardInner.classList.remove("flipped");
+      //    render();
+      //    updateCount();
+      //    setMsg("Đã trộn thứ tự thẻ");
+      //  });
+
+      // --- Add form ---
+      //  el("addForm").addEventListener("submit", (e) => {
+      //    e.preventDefault();
+      //    const kanji = el("fKanji").value.trim();
+      //    const meaning = el("fMeaning").value.trim();
+      //    const reading = el("fReading").value.trim();
+      //    const level = el("fLevel").value.trim();
+
+      //    if (!kanji || !meaning) {
+      //      setMsg("Vui lòng nhập Kanji và Nghĩa", "danger");
+      //      return;
+      //    }
+
+      //    deck.push({ kanji, meaning, reading, level });
+      //    saveDeck();
+      //    setMsg("Đã thêm thẻ mới");
+      //    el("fKanji").value = "";
+      //    el("fMeaning").value = "";
+      //    el("fReading").value = "";
+      //    el("fLevel").value = "";
+      //    i = deck.length - 1;
+      //    render();
+      //    updateCount();
+      //    flipped = false;
+      //    cardInner.classList.remove("flipped");
+      //  });
+
+      // Reset to default deck
+      //  el("reset").addEventListener("click", () => {
+      //    if (!confirm("Xóa bộ thẻ hiện tại và trở về mặc định?")) return;
+      //    localStorage.removeItem(LS_KEY);
+      //    loadDeck();
+      //    setMsg("Đã reset bộ thẻ");
+      //  });
+
+      // Init
+      loadDeck();
+   </script>
+</body>
